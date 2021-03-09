@@ -5,6 +5,12 @@ from enum import Enum
 
 import pygame
 
+
+# TODO export to config.txt
+volume = 10
+music_quality = 'high'
+
+
 USE_TIMER = False
 FULL_SCREEN = True
 ENTER_USER_NAME = True
@@ -53,14 +59,15 @@ def init_screen():
 
 
 def reset_all():
-    global Font, volume, player, press, current_frame, game_is_on
+    global Font, volume, max_monster, max_bullet, player, press, current_frame, game_is_on
 
     class Font:
         h1 = pygame.font.SysFont('SimHei', 45)
         h2 = pygame.font.SysFont('SimHei', 35)
         h3 = pygame.font.SysFont('SimHei', 25)
 
-    volume = 100
+    max_bullet = 1000
+    max_monster = 100
 
     try:
         tmp = player.name
@@ -127,15 +134,16 @@ class Obj:
 
     def in_main_window(self):
         pos_x, pos_y = round(self.x), round(self.y)
-        return main_window[0] < pos_x < main_window[0]+main_window[2] \
-            and main_window[1] < pos_y < main_window[1]+main_window[3]
+        return main_window[0] < pos_x < main_window[0] + main_window[2] \
+            and main_window[1] < pos_y < main_window[1] + main_window[3]
 
 
 class Player(Obj):
     point_list = [100, 250, 500, 800, 1100]
 
     def __init__(self, _move_speed):
-        Obj.__init__(self, (main_window[0]*2+main_window[2])//2, round((main_window[1]*2+main_window[3])//1.5))
+        Obj.__init__(self, (main_window[0] * 2 + main_window[2]) // 2,
+                     round((main_window[1] * 2 + main_window[3]) // 1.5))
         self.name = 'default'
         self.score = 0
         self.hp = 0
@@ -161,10 +169,10 @@ class Player(Obj):
 
         move_speed = self.move_speed
         if _press[pygame.K_LSHIFT]:
-            self.tracking_bullet_fire_pos = min(1, self.tracking_bullet_fire_pos+0.04)
+            self.tracking_bullet_fire_pos = min(1, self.tracking_bullet_fire_pos + 0.04)
             move_speed /= 2.5
         else:
-            self.tracking_bullet_fire_pos = max(0, self.tracking_bullet_fire_pos-0.04)
+            self.tracking_bullet_fire_pos = max(0, self.tracking_bullet_fire_pos - 0.04)
         if sum([_press[pygame.K_UP], _press[pygame.K_DOWN], _press[pygame.K_LEFT], _press[pygame.K_RIGHT]]) == 2:
             self.x += (_press[pygame.K_RIGHT] - _press[pygame.K_LEFT]) * move_speed / 1.414
             self.y += (_press[pygame.K_DOWN] - _press[pygame.K_UP]) * move_speed / 1.414
@@ -193,13 +201,13 @@ class Player(Obj):
             self.cheat = True
 
     def shot1(self):
-        return Bullet(self.x, self.y-15, 0, -20, 1)
+        return Bullet(self.x, self.y - 15, 0, -20, 1)
 
     def shot2(self):
         if current_frame - self.last_tracking_bullet_frame >= self.tracking_bullet_frequency:
             self.last_tracking_bullet_frame = current_frame
-            dx = cos(0.8*self.tracking_bullet_fire_pos)*30
-            dy = sin(0.8*self.tracking_bullet_fire_pos)*30
+            dx = cos(0.8 * self.tracking_bullet_fire_pos) * 30
+            dy = sin(0.8 * self.tracking_bullet_fire_pos) * 30
             if len(Monster.monsters) == 0:
                 return Bullet(self.x - dx, self.y - dy, 0, -10, 2, -1), \
                     Bullet(self.x + dx, self.y - dy, 0, -10, 2, -1)
@@ -208,7 +216,7 @@ class Player(Obj):
                 min_dis_monster = 0
                 ddx, ddy = 0, 0
                 for _monster in Monster.monsters:
-                    if _monster.distance((self.x-dx, self.y-dy)) < min_dis:
+                    if _monster.distance((self.x - dx, self.y - dy)) < min_dis:
                         min_dis_monster = _monster.id
                         min_dis = self.distance(_monster)
                         ddx = self.x - dx - _monster.x
@@ -221,7 +229,7 @@ class Player(Obj):
                 min_dis = 100000
                 min_dis_monster = 0
                 for _monster in Monster.monsters:
-                    if _monster.distance((self.x+dx, self.y-dy)) < min_dis:
+                    if _monster.distance((self.x + dx, self.y - dy)) < min_dis:
                         min_dis_monster = _monster.id
                         min_dis = self.distance(_monster)
                         ddx = self.x + dx - _monster.x
@@ -299,15 +307,15 @@ class Player(Obj):
     def check_invincible(self):
         if self.is_invincible:
             # invincible for 1.5s
-            if current_frame-self.last_invincible_start_frame >= 120*1.5:
+            if current_frame - self.last_invincible_start_frame >= 120 * 1.5:
                 self.is_invincible = False
 
     def die(self):
         global main_loop_start_time, game_is_on
         self.hp -= 1
         self.bomb = 3
-        self.x = (main_window[0]*2+main_window[2])//2
-        self.y = round((main_window[1]*2+main_window[3])//1.5)
+        self.x = (main_window[0] * 2 + main_window[2]) // 2
+        self.y = round((main_window[1] * 2 + main_window[3]) // 1.5)
         self.power = max(self.power - 10, 10)
         self.last_invincible_start_frame = current_frame
         self.is_invincible = True
@@ -318,8 +326,8 @@ class Player(Obj):
         sleep(0.75)
 
         for i in range(4):
-            Item.generate_item(randint(self.x-200, self.x+200), randint(-50, -10), 1)
-        Item.generate_item(randint(self.x-200, self.x+200), randint(-50, -10), 5)
+            Item.generate_item(randint(self.x - 200, self.x + 200), randint(-50, -10), 1)
+        Item.generate_item(randint(self.x - 200, self.x + 200), randint(-50, -10), 5)
 
         if self.hp < 0:
             Game.end_game(2)
@@ -332,13 +340,15 @@ class Player(Obj):
                 # exit(0)
 
     def draw(self, screen):
-        screen.blit(player.img1, (player.x-player.img1.get_width()//2, player.y-player.img1.get_height()//2))
+        screen.blit(player.img1, (player.x - player.img1.get_width() // 2, player.y - player.img1.get_height() // 2))
         pygame.draw.circle(screen, (0, 255, 255), [player.x, player.y], 5)
 
-        dx = int(cos(0.8*player.tracking_bullet_fire_pos)*30)
-        dy = int(sin(0.8*player.tracking_bullet_fire_pos)*30)
-        screen.blit(player.img2, (player.x-dx-player.img2.get_width()//2, player.y-dy-player.img2.get_height()//2))
-        screen.blit(player.img2, (player.x+dx-player.img2.get_width()//2, player.y-dy-player.img2.get_height()//2))
+        dx = int(cos(0.8 * player.tracking_bullet_fire_pos) * 30)
+        dy = int(sin(0.8 * player.tracking_bullet_fire_pos) * 30)
+        screen.blit(player.img2, (player.x - dx - player.img2.get_width() //
+                                  2, player.y - dy - player.img2.get_height() // 2))
+        screen.blit(player.img2, (player.x + dx - player.img2.get_width() //
+                                  2, player.y - dy - player.img2.get_height() // 2))
 
 
 class Monster(Obj):
@@ -349,11 +359,11 @@ class Monster(Obj):
         Obj.__init__(self, _x, _y)
 
         def init_move_method():
-            gather_point = ((main_window[0]*2+main_window[2])//2, 400)
-            vx = gather_point[0]-self.x
-            vy = gather_point[1]-self.y
-            self.x_speed = vx/sqrt(vx**2+vy**2)*self.speed
-            self.y_speed = vy/sqrt(vx**2+vy**2)*self.speed
+            gather_point = ((main_window[0] * 2 + main_window[2]) // 2, 400)
+            vx = gather_point[0] - self.x
+            vy = gather_point[1] - self.y
+            self.x_speed = vx / sqrt(vx**2 + vy**2) * self.speed
+            self.y_speed = vy / sqrt(vx**2 + vy**2) * self.speed
 
         self.id = Monster.monster_count
         Monster.monster_count += 1
@@ -375,7 +385,7 @@ class Monster(Obj):
         if current_frame <= 120:
             return
         if random() < difficulty[3] and len(Monster.monsters) < max_monster:
-            pos_x = randint(main_window[0]+20, main_window[0]+main_window[2]-20)
+            pos_x = randint(main_window[0] + 20, main_window[0] + main_window[2] - 20)
             pos_y = randint(60, 200)
             hp = 3 * round(0.1 * sqrt(current_frame)) + 1
 
@@ -383,7 +393,7 @@ class Monster(Obj):
             if random() < 0.75:
                 Monster.monsters.append(Monster(1, hp, pos_x, pos_y, difficulty[4], difficulty[5], 70, 10000))
             else:
-                Monster.monsters.append(Monster(2, hp*2, pos_x, pos_y, difficulty[4], difficulty[5], 100, 25000))
+                Monster.monsters.append(Monster(2, hp * 2, pos_x, pos_y, difficulty[4], difficulty[5], 100, 25000))
 
     @classmethod
     def check_monster_die(cls):
@@ -395,7 +405,7 @@ class Monster(Obj):
                         if player_bullet.kind == 1:
                             _monster.hp -= player.power
                         else:
-                            _monster.hp -= player.power//2
+                            _monster.hp -= player.power // 2
 
         for _monster in cls.monsters:
             if _monster.hp <= 0:
@@ -414,7 +424,7 @@ class Monster(Obj):
                                round(log(_monster.hp)) + 10)
 
     def shot(self, current_frame):
-        if current_frame - self.generate_frame - player.death_time*0.75 > self.shot_frequency * self.shot_times:
+        if current_frame - self.generate_frame - player.death_time * 0.75 > self.shot_frequency * self.shot_times:
             if len(Bullet.monster_bullets) < max_bullet:
                 self.shot_times += 1
                 if self.type == 1:
@@ -562,7 +572,7 @@ class Item(Obj):
         for _item in cls.items:
             _item.y_speed = min(2.7, _item.y_speed + (current_frame - _item.generate_frame - 3.5) // 25)
             _item.y += _item.y_speed
-            if main_window[0] < _item.x < main_window[0]+main_window[2] and _item.y < main_window[1]+main_window[3]:
+            if main_window[0] < _item.x < main_window[0] + main_window[2] and _item.y < main_window[1] + main_window[3]:
                 cls.items[top] = _item
                 top += 1
         cls.items = cls.items[0:top]
@@ -604,13 +614,13 @@ class File():
     @classmethod
     def write(cls, score_list, file_name='high_score.dat'):
         score_list = [l[:-1] if l[-1] == -1 else l for l in score_list]
-        score_list.append([player.name, difficulty[0], '0' * (9-len(str(player.score))) +
+        score_list.append([player.name, difficulty[0], '0' * (9 - len(str(player.score))) +
                            str(player.score), str(player.cheat), -1])
         score_list.sort(key=lambda x: int(x[2]), reverse=True)
         with open(file_name, 'w') as f:
             for i in range(min(len(score_list), 20)):
                 # [player,difficulty,score,cheat],
-                f.write('['+','.join(score_list[i][0:4])+']\n')
+                f.write('[' + ','.join(score_list[i][0:4]) + ']\n')
         return score_list
 
 
@@ -622,7 +632,7 @@ class Page:
         def repaint():
             screen.fill(Color.white)
             pygame.draw.rect(screen, Color.olive_green, [
-                             pos_x-main_window[2] // 2, 20, main_window[2], main_window[3]], 0)
+                             pos_x - main_window[2] // 2, 20, main_window[2], main_window[3]], 0)
             for i in range(4):
                 text_surface = Font.h2.render(texts[i], True, Color.white)
                 screen.blit(text_surface, (pos_x - 50, 350 + 80 * i))
@@ -672,7 +682,8 @@ class Page:
         pos_x = window_size[0] // 2
 
         screen.fill(Color.white)
-        pygame.draw.rect(screen, Color.olive_green, [pos_x-main_window[2] // 2, 20, main_window[2], main_window[3]], 0)
+        pygame.draw.rect(screen, Color.olive_green, [
+                         pos_x - main_window[2] // 2, 20, main_window[2], main_window[3]], 0)
 
         text_surface = Font.h2.render('按键操作', True, Color.green)
         screen.blit(text_surface, (pos_x - 200, 130))
@@ -687,7 +698,7 @@ class Page:
             screen.blit(text_surface, (pos_x + 50, 200 + 60 * i))
 
         text_surface = Font.h2.render('按ESC返回', True, Color.grey)
-        screen.blit(text_surface, (pos_x - 100, main_window[3]-100))
+        screen.blit(text_surface, (pos_x - 100, main_window[3] - 100))
 
         pygame.display.update()
 
@@ -703,31 +714,39 @@ class Page:
     def settings_page(cls, screen):
         screen.fill(Color.white)
         pos_x = window_size[0] // 2
-        pygame.draw.rect(screen, Color.olive_green, [pos_x-main_window[2] // 2, 20, main_window[2], main_window[3]], 0)
+        pygame.draw.rect(screen, Color.olive_green, [
+                         pos_x - main_window[2] // 2, 20, main_window[2], main_window[3]], 0)
 
-        # text_surface = Font.h1.render('选项', True, Color.green)
-        # screen.blit(text_surface, (pos_x-50, 100))
+        focus = (0, 0)
 
-        text_surface = Font.h2.render('显示:', True, Color.blue)
-        screen.blit(text_surface, (pos_x-150, main_window[3]//2-100))
+        text_surface = Font.h1.render('选项', True, Color.green)
+        screen.blit(text_surface, (pos_x - 50, 100))
+
+        text_surface = Font.h2.render('显示:', True, Color.azure)
+        screen.blit(text_surface, (pos_x - 150, main_window[3] // 2 - 100))
         text_surface = Font.h2.render('全屏', True, Color.blue)
-        screen.blit(text_surface, (pos_x-50, main_window[3]//2-100))
+        screen.blit(text_surface, (pos_x - 30, main_window[3] // 2 - 100))
         text_surface = Font.h2.render('窗口', True, Color.blue)
-        screen.blit(text_surface, (pos_x+50, main_window[3]//2-100))
+        screen.blit(text_surface, (pos_x + 50, main_window[3] // 2 - 100))
 
-        text_surface = Font.h2.render('音量:', True, (150, 150, 250))
-        screen.blit(text_surface, (pos_x-150, main_window[3]//2-100))
+        text_surface = Font.h2.render('音量:', True, Color.azure)
+        screen.blit(text_surface, (pos_x - 150, main_window[3] // 2 - 0))
         text_surface = Font.h2.render(str(volume), True, Color.blue)
-        screen.blit(text_surface, (pos_x+50, main_window[3]//2-100))
+        screen.blit(text_surface, (pos_x + 10, main_window[3] // 2 - 0))
+        pygame.mixer.music.set_volume(volume / 100)
 
-        text_surface = Font.h2.render('音效:', True, (150, 150, 250))
-        screen.blit(text_surface, (pos_x-150, main_window[3]//2-100))
+        text_surface = Font.h2.render('音效:', True, Color.azure)
+        screen.blit(text_surface, (pos_x - 150, main_window[3] // 2 + 100))
+        text_surface = Font.h2.render('wav', True, Color.blue)
+        screen.blit(text_surface, (pos_x - 30, main_window[3] // 2 + 100))
+        text_surface = Font.h2.render('mp3', True, Color.blue)
+        screen.blit(text_surface, (pos_x + 50, main_window[3] // 2 + 100))
 
-        text_surface = Font.h1.render('施工中', True, Color.red)
-        screen.blit(text_surface, (pos_x - 100, main_window[3]-200))
+        # text_surface = Font.h1.render('施工中', True, Color.red)
+        # screen.blit(text_surface, (pos_x - 100, main_window[3] - 200))
 
         text_surface = Font.h2.render('按ESC返回', True, Color.grey)
-        screen.blit(text_surface, (pos_x - 100, main_window[3]-100))
+        screen.blit(text_surface, (pos_x - 100, main_window[3] - 100))
 
         pygame.display.update()
 
@@ -773,9 +792,10 @@ class Page:
 
         screen.fill(Color.white)
         pos_x = window_size[0] // 2
-        pygame.draw.rect(screen, Color.olive_green, [pos_x-main_window[2] // 2, 20, main_window[2], main_window[3]], 0)
+        pygame.draw.rect(screen, Color.olive_green, [
+                         pos_x - main_window[2] // 2, 20, main_window[2], main_window[3]], 0)
         text_surface = Font.h1.render('选择难度', True, Color.blue)
-        screen.blit(text_surface, (pos_x-100, 100))
+        screen.blit(text_surface, (pos_x - 100, 100))
         for i in range(3):
             text_surface = Font.h2.render(difficulties[i][0], True, Color.white)
             screen.blit(text_surface, (pos_x - 50, 350 + 100 * i))
@@ -790,9 +810,9 @@ class Page:
                 _difficulty = difficulties[(pos_y - 350) // 100]
                 _goto_choose = 1
             elif key_dict[pygame.K_UP]:
-                pos_y = max(pos_y-100, 350)
+                pos_y = max(pos_y - 100, 350)
             elif key_dict[pygame.K_DOWN]:
-                pos_y = min(pos_y+100, 350+200)
+                pos_y = min(pos_y + 100, 350 + 200)
             if _goto_choose:
                 break
             for i in range(350, 350 + 300, 100):
@@ -808,12 +828,12 @@ class Page:
             player.hp = _difficulty[1]
             player.bomb = _difficulty[2]
             difficulty = _difficulty
-            Page.start_game_page()
+            Page.start_game_page(screen)
         else:
             Page.start_page(screen)
 
     @classmethod
-    def start_game_page(cls):
+    def start_game_page(cls, screen):
         screen.fill(Color.white)
         pygame.display.update()
         Game.start_game()
@@ -828,18 +848,19 @@ class Page:
         screen.fill(Color.white)
         pos_x = window_size[0] // 2
         pos_y = window_size[1] // 2
-        pygame.draw.rect(screen, Color.olive_green, [pos_x-main_window[2] // 2, 20, main_window[2], main_window[3]], 0)
+        pygame.draw.rect(screen, Color.olive_green, [
+                         pos_x - main_window[2] // 2, 20, main_window[2], main_window[3]], 0)
 
-        message_box = [pos_x-150, pos_y-150, 300, 70]
-        submit_button = [pos_x-150, pos_y+50, 300, 80]
+        message_box = [pos_x - 150, pos_y - 150, 300, 70]
+        submit_button = [pos_x - 150, pos_y + 50, 300, 80]
         # screen.blit(back_image, (400, 100))
         # submit button
         screen.set_clip(submit_button)  # submit button's location
         screen.fill(Color.grey)  # submit button's color
-        screen.blit(Font.h2.render('确认', True, Color.white), (pos_x-30, pos_y+70))
+        screen.blit(Font.h2.render('确认', True, Color.white), (pos_x - 30, pos_y + 70))
         screen.set_clip(message_box)
         screen.fill(Color.grey)
-        screen.blit(Font.h2.render('name:', True, Color.white), (pos_x-120, pos_y-135))
+        screen.blit(Font.h2.render('name:', True, Color.white), (pos_x - 120, pos_y - 135))
         pygame.display.update()
 
         while True:
@@ -851,12 +872,12 @@ class Page:
                 break
             else:
                 for key in range(48, 128):
-                    if key_dict[key]and len(text) < 8:
+                    if key_dict[key] and len(text) < 8:
                         text += chr(key)
             # message box
             screen.fill(Color.grey)
-            screen.blit(Font.h2.render('name:', True, Color.white), (pos_x-120, pos_y-135))
-            screen.blit(Font.h2.render(text, True, Color.white), (pos_x-15, pos_y-135))
+            screen.blit(Font.h2.render('name:', True, Color.white), (pos_x - 120, pos_y - 135))
+            screen.blit(Font.h2.render(text, True, Color.white), (pos_x - 15, pos_y - 135))
             pygame.display.update(message_box)
         screen.set_clip()
 
@@ -877,7 +898,7 @@ class Page:
                     text_surface = Font.h2.render(score_list[i][0], True, Color.blue)
                     screen.blit(text_surface, (window_size[0] // 2 - 200, 200 + i * 50))
                     text_surface = Font.h2.render(
-                        ' '*(max_len-len(score_list[i][2]))+score_list[i][2], True, Color.blue)
+                        ' ' * (max_len - len(score_list[i][2])) + score_list[i][2], True, Color.blue)
                     screen.blit(text_surface, (window_size[0] // 2 + 80, 200 + i * 50))
             pygame.display.update()
             sleep(0.4)
@@ -890,18 +911,18 @@ class Game():
     def draw_info_column(cls, screen):
         global high_score_list
 
-        pos_x = main_window[0]+main_window[2]+100
+        pos_x = main_window[0] + main_window[2] + 100
 
         pygame.draw.rect(screen, Color.white, [pos_x, 100, 300, 30], 0)
         if len(high_score_list) != 0 and int(high_score_list[0][2]) >= player.score:
-            text_surface = Font.h3.render('High score:'+high_score_list[0][2], True, Color.blue)
+            text_surface = Font.h3.render('High score:' + high_score_list[0][2], True, Color.blue)
         else:
-            text_surface = Font.h3.render('High score:'+'0' * (9-len(str(player.score))) +
+            text_surface = Font.h3.render('High score:' + '0' * (9 - len(str(player.score))) +
                                           str(player.score), True, Color.blue)
         screen.blit(text_surface, (pos_x, 100))
 
         pygame.draw.rect(screen, Color.white, [pos_x, 150, 300, 30], 0)
-        text_surface = Font.h3.render('Score:     ' + '0' * (9-len(str(player.score))) +
+        text_surface = Font.h3.render('Score:     ' + '0' * (9 - len(str(player.score))) +
                                       str(player.score), True, Color.blue)
         screen.blit(text_surface, (pos_x, 150))
 
@@ -932,9 +953,9 @@ class Game():
 
     @classmethod
     def draw_fps(cls, screen):
-        fps = round(current_frame / (time() - main_loop_start_time - player.death_time*0.75), 1)
+        fps = round(current_frame / (time() - main_loop_start_time - player.death_time * 0.75), 1)
         text_surface = Font.h3.render('FPS:' + str(fps), True, Color.grey)
-        screen.blit(text_surface, (main_window[0]+10, 30))
+        screen.blit(text_surface, (main_window[0] + 10, 30))
 
     @classmethod
     @timer(USE_TIMER)
@@ -952,15 +973,17 @@ class Game():
         Monster.draw(screen)
 
         screen.set_clip()
-        pygame.display.update([main_window, [main_window[0]+main_window[2]+100, 100, 300, 400]])
+        pygame.display.update([main_window, [main_window[0] + main_window[2] + 100, 100, 300, 400]])
 
     @classmethod
     def start_game(cls):
-        global main_loop_start_time, game_is_on, max_fps, press, current_frame
+        global main_loop_start_time, press, current_frame
 
+        pygame.mixer.music.load("./data/audio/妖々夢 ～ Snow or Cherry Petal.mp3")
+        pygame.mixer.music.play()
         main_loop_start_time = time()
         while game_is_on:
-            if max_fps == 0 or (time() - main_loop_start_time - player.death_time*0.75) * max_fps > current_frame:
+            if max_fps == 0 or (time() - main_loop_start_time - player.death_time * 0.75) * max_fps > current_frame:
                 current_frame += 1
 
                 # to avoid use spells at a time
@@ -988,7 +1011,7 @@ class Game():
 
     @classmethod
     def end_game(cls, status):
-        global screen, high_score_list
+        global high_score_list
 
         screen.fill(Color.white)
         # TODO put in enter_name_page
@@ -1028,7 +1051,7 @@ class Game():
 
         # paused text
         text_surface = Font.h3.render('Paused', True, Color.red)
-        screen.blit(text_surface, (main_window[0]+main_window[2]-90, 30))
+        screen.blit(text_surface, (main_window[0] + main_window[2] - 90, 30))
 
         # crystal surface
         screen.set_clip(main_window)
@@ -1038,12 +1061,12 @@ class Game():
         surface.set_clip()
 
         texts = ['继续', '设置', '返回标题页']
-        pos_x = (main_window[0]*2+main_window[2])//2
+        pos_x = (main_window[0] * 2 + main_window[2]) // 2
         pos_y = 350
 
         for i in range(3):
             text_surface = Font.h2.render(texts[i], True, Color.white)
-            screen.blit(text_surface, (pos_x - 35*len(texts[i])//2, 350 + 100 * i))
+            screen.blit(text_surface, (pos_x - 35 * len(texts[i]) // 2, 350 + 100 * i))
         pygame.display.update()
 
         # 过滤多余事件
@@ -1057,26 +1080,26 @@ class Game():
             elif key_dict[pygame.K_q]:
                 exit()
             elif key_dict[pygame.K_UP]:
-                pos_y = max(pos_y-100, 350)
+                pos_y = max(pos_y - 100, 350)
             elif key_dict[pygame.K_DOWN]:
-                pos_y = min(pos_y+100, 350+200)
+                pos_y = min(pos_y + 100, 350 + 200)
             for i in range(350, 350 + 300, 100):
                 if i == pos_y:
                     pygame.draw.polygon(screen, Color.white,
-                                        [(pos_x - 35*len(texts[(i-350)//100])//2-50, i + 10),
-                                         (pos_x - 35*len(texts[(i-350)//100])//2-50, i + 30),
-                                         (pos_x - 35*len(texts[(i-350)//100])//2-40, i + 20)])
+                                        [(pos_x - 35 * len(texts[(i - 350) // 100]) // 2 - 50, i + 10),
+                                         (pos_x - 35 * len(texts[(i - 350) // 100]) // 2 - 50, i + 30),
+                                         (pos_x - 35 * len(texts[(i - 350) // 100]) // 2 - 40, i + 20)])
                 else:
                     pygame.draw.polygon(screen, Color.olive_green,
-                                        [(pos_x - 35*len(texts[(i-350)//100])//2-50, i + 10),
-                                         (pos_x - 35*len(texts[(i-350)//100])//2-50, i + 30),
-                                         (pos_x - 35*len(texts[(i-350)//100])//2-40, i + 20)])
-            pygame.display.update([pos_x - 35*len(texts[2])//2-50, 360, 50, 300])
+                                        [(pos_x - 35 * len(texts[(i - 350) // 100]) // 2 - 50, i + 10),
+                                         (pos_x - 35 * len(texts[(i - 350) // 100]) // 2 - 50, i + 30),
+                                         (pos_x - 35 * len(texts[(i - 350) // 100]) // 2 - 40, i + 20)])
+            pygame.display.update([pos_x - 35 * len(texts[2]) // 2 - 50, 360, 50, 300])
             # TODO error
         pause_end_time = time()
-        main_loop_start_time += pause_end_time-pause_begin_time
+        main_loop_start_time += pause_end_time - pause_begin_time
 
-        pygame.draw.rect(screen, Color.olive_green, [main_window[0]+main_window[2]-90, 30, 90, 50], 0)
+        pygame.draw.rect(screen, Color.olive_green, [main_window[0] + main_window[2] - 90, 30, 90, 50], 0)
         pygame.display.update()
 
 # 8/33
@@ -1127,12 +1150,12 @@ class Game():
 
 if __name__ == '__main__':
     max_fps = 120
-    max_bullet = 1000
-    max_monster = 100
 
     if File.use_file:
         high_score_list = File.read()
+
     pygame.init()
+    pygame.mixer.music.set_volume(volume / 100)
     screen = init_screen()
 
     reset_all()
