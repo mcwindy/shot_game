@@ -7,12 +7,12 @@ import pygame
 
 
 # TODO export to config.txt
-volume = 10
-music_quality = 'high'
+volume = 10  # 0 to 100
+music_type = 'mp3'
 
 
 USE_TIMER = False
-FULL_SCREEN = True
+FULL_SCREEN = False
 ENTER_USER_NAME = True
 
 
