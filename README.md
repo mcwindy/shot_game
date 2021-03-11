@@ -40,7 +40,7 @@ pip install -r requirements.txt
 
 ## 演示视频
 
-[演示demo](https://github.com/mcwindy/shot_game/blob/master/shot_game_demo.gif)
+[演示demo](https://github.com/mcwindy/shot_game/blob/master/data/demo/demo.gif)
 
 
 
